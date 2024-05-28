@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九九乘法表测试</title>
+    <style>
+        .alert-box {
+            font-size: 2em;
+            color: red;
+            font-weight: bold;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 2px solid red;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #stats {
+            margin-top: 20px;
+        }
+        .stat {
+            margin-right: 20px;
+        }
+    </style>
+    <script>
+        let totalQuestions = 0;
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+        let a = 0;
+        let b = 0;
+        let prevA = 0;
+        let prevB = 0;
+        let startTime;
+        let totalTime = 0;
+
+        function startTest() {
+            a = parseInt(document.getElementById('numberInput').value);
+            if (isNaN(a) || a < 1 || a > 9) {
+                alert('请输入1到9之间的数字');
+                return;
+            }
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            do {
+                b = Math.floor(Math.random() * (10 - a)) + a;
+            } while (a === prevA && b === prevB);
+
+            prevA = a;
+            prevB = b;
+
+            document.getElementById('question').innerText = `${a} x ${b} = `;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').focus();
+
+            startTime = new Date(); // 开始计时
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answerInput').value);
+            const correctAnswer = a * b;
+            const endTime = new Date(); // 结束计时
+            const timeTaken = (endTime - startTime) / 1000; // 计算用时，单位为秒
+            totalTime += timeTaken; // 累计总用时
+            totalQuestions++;
+
+            if (userAnswer === correctAnswer) {
+                correctAnswers++;
+                speak('oh yes!');
+                nextQuestion();
+            } else {
+                wrongAnswers++;
+                const correctAnswerText = `${numberToChinese(a)}${numberToChinese(b)}${correctAnswer >= 10 ? '' : '得'}${numberToChinese(correctAnswer)}`;
+                speak(`oh no! ${correctAnswerText}`);
+                showAlert(`正确答案是：${a} x ${b} = ${correctAnswer}`);
+            }
+
+            updateStats();
+        }
+
+        function showAlert(message) {
+            const alertBox = document.createElement('div');
+            alertBox.className = 'alert-box';
+            alertBox.innerText = message;
+            document.body.appendChild(alertBox);
+            alertBox.addEventListener('click', () => {
+                alertBox.remove();
+                nextQuestion();
+            });
+        }
+
+        function updateStats() {
+            const accuracy = (correctAnswers / totalQuestions * 100).toFixed(2);
+            const averageTime = (totalTime / totalQuestions).toFixed(2);
+            document.getElementById('stats').innerHTML = 
+                `<span class="stat">已做题数: ${totalQuestions}</span>` + 
+                `<span class="stat">正确数: ${correctAnswers}</span>` + 
+                `<span class="stat">错误数: ${wrongAnswers}</span>` + 
+                `<span class="stat">准确率: ${accuracy}%</span>` +
+                `<span class="stat">平均每题用时: ${averageTime}秒</span>`;
+        }
+
+        function numberToChinese(num) {
+            const cnNums = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+            if (num <= 10) return cnNums[num];
+            const tens = Math.floor(num / 10);
+            const units = num % 10;
+            if (units === 0) return `${cnNums[tens]}十`;
+            if (tens === 1) return `十${cnNums[units]}`;
+            return `${cnNums[tens]}十${cnNums[units]}`;
+        }
+
+        function speak(text) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-CN';
+            window.speechSynthesis.speak(msg);
+        }
+
+        function validateNumberInput(event, maxLength) {
+            const input = event.target;
+            const value = input.value;
+
+            // Allow only digits 1-9 and restrict length
+            if (value.length > maxLength || value.includes('.') || isNaN(value) || value < 1 || value > 99) {
+                alert('请输入1到9之间的数字');
+                input.value = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('confirmBtn').addEventListener('click', startTest);
+            document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+            document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkAnswer();
+            });
+            document.getElementById('numberInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') startTest();
+            });
+            document.getElementById('numberInput').addEventListener('input', (e) => validateNumberInput(e, 1));
+            document.getElementById('answerInput').addEventListener('input', (e) => validateNumberInput(e, 2));
+        });
+    </script>
+</head>
+<body>
+    <h1>九九乘法表测试</h1>
+    <label for="numberInput">请输入1到9的数字:</label>
+    <input type="number" id="numberInput" min="1" max="9">
+    <button id="confirmBtn">确认</button>
+    <p id="question"></p>
+    <input type="number" id="answerInput">
+    <button id="submitBtn">提交</button>
+    <div id="stats">
+        <span class="stat">已做题数: 0</span>
+        <span class="stat">正确数: 0</span>
+        <span class="stat">错误数: 0</span>
+        <span class="stat">准确率: 0%</span>
+        <span class="stat">平均每题用时: 0秒</span>
+    </div>
+</body>
+</html>
